@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Capacitor Demo</title>
+    <script src="capacitor.js"></script>
+    <style>
+        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; gap: 15px; }
+        button { font-size: 1.2em; padding: 15px 25px; cursor: pointer; }
+        #status { font-weight: bold; color: green; }
+    </style>
+</head>
+<body>
+    <h1>Capacitor Features Demo</h1>
+    <p id="status"></p>
+
+    <button id="backupBtn">1. Backup Dummy Data</button>
+    <button id="shareTextBtn">2. Share Text</button>
+    <button id="shareImageBtn">3. Share Dummy Image</button>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const backupBtn = document.getElementById('backupBtn');
+            const shareTextBtn = document.getElementById('shareTextBtn');
+            const shareImageBtn = document.getElementById('shareImageBtn');
+            const statusEl = document.getElementById('status');
+            
+            // Permissions check function
+            const checkPermissions = async () => {
+                try {
+                    const { Filesystem } = Capacitor.Plugins;
+                    let permStatus = await Filesystem.checkPermissions();
+                    if (permStatus.publicStorage !== 'granted') {
+                        permStatus = await Filesystem.requestPermissions();
+                    }
+                    return permStatus.publicStorage === 'granted';
+                } catch(e) {
+                    console.error("Permission API not available. Assuming web.");
+                    return true; // For web, no permissions needed
+                }
+            };
+
+            // 1. Backup Button
+            backupBtn.addEventListener('click', async () => {
+                statusEl.textContent = 'Backup button clicked...';
+                const hasPermission = await checkPermissions();
+                if (!hasPermission) {
+                    statusEl.textContent = 'Error: Storage permission denied.';
+                    return;
+                }
+
+                try {
+                    const { Filesystem, Directory, Encoding } = Capacitor.Plugins;
+                    const dummyData = { student: "Ali", sabaq: "Para 1" };
+                    const fileName = `dummy_backup_${Date.now()}.json`;
+                    
+                    await Filesystem.writeFile({
+                        path: fileName,
+                        data: JSON.stringify(dummyData),
+                        directory: Directory.Downloads,
+                        encoding: Encoding.UTF8,
+                        recursive: true
+                    });
+
+                    statusEl.textContent = `Success! Backup saved to Downloads folder as ${fileName}`;
+                } catch (e) {
+                    statusEl.textContent = 'Backup Error: ' + e.message;
+                    console.error(e);
+                }
+            });
+
+            // 2. Share Text Button
+            shareTextBtn.addEventListener('click', async () => {
+                statusEl.textContent = 'Share text button clicked...';
+                try {
+                    const { Share } = Capacitor.Plugins;
+                    await Share.share({
+                        title: 'Test Share',
+                        text: 'This is a test message from Capacitor!',
+                        dialogTitle: 'Share this text',
+                    });
+                    statusEl.textContent = 'Share dialog opened!';
+                } catch(e) {
+                    statusEl.textContent = 'Share Text Error: ' + e.message;
+                    console.error(e);
+                }
+            });
+
+            // 3. Share Image Button
+            shareImageBtn.addEventListener('click', async () => {
+                statusEl.textContent = 'Share image button clicked...';
+                 const hasPermission = await checkPermissions();
+                if (!hasPermission) {
+                    statusEl.textContent = 'Error: Storage permission denied.';
+                    return;
+                }
+
+                try {
+                    const { Filesystem, Directory, Share } = Capacitor.Plugins;
+                    // Create a dummy image using base64
+                    const dummyBase64Image = 'iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg==';
+                    const fileName = 'dummy_image.png';
+
+                    const result = await Filesystem.writeFile({
+                        path: fileName,
+                        data: dummyBase64Image,
+                        directory: Directory.Cache, // Cache is best for temporary files
+                    });
+
+                    await Share.share({
+                        title: 'Dummy Image',
+                        url: result.uri, // The path to the saved file
+                        dialogTitle: 'Share this image',
+                    });
+                    statusEl.textContent = 'Share dialog for image opened!';
+                } catch(e) {
+                    statusEl.textContent = 'Share Image Error: ' + e.message;
+                    console.error(e);
+                }
+            });
+
+        });
+    </script>
+</body>
+</html>
