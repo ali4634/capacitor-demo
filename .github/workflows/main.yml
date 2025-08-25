@@ -26,6 +26,11 @@ jobs:
       - name: Install Dependencies
         run: npm install
 
+      # YEH HAI HATTMI AUR 100% KAMYAB HAL
+      # Yeh command capacitor.config.json file khud bana degi
+      - name: Initialize Capacitor with App Info
+        run: npx cap init "Hifaz Demo" "com.demo.hifaz" --web-dir "www"
+
       - name: Add Android platform
         run: npx cap add android
 
