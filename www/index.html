@@ -30,7 +30,6 @@
             // Permissions check function
             const checkPermissions = async () => {
                 try {
-                    // Capacitor v6+ mein plugins direct import hote hain.
                     const { Filesystem } = Capacitor.Plugins;
                     let permStatus = await Filesystem.checkPermissions();
                     if (permStatus.publicStorage !== 'granted') {
@@ -40,7 +39,6 @@
                     return permStatus.publicStorage === 'granted';
                 } catch(e) {
                     console.error("Permission API not available. Assuming web.");
-                    // Web par yeh hamesha fail hoga, is liye hum ise ignore karte hain.
                     return true;
                 }
             };
@@ -58,8 +56,8 @@
                 }
 
                 try {
-                    const { Filesystem, Directory, Encoding } = Capacitor.Plugins;
-                    const dummyData = { student: "Ali", sabaq: "Para 1, Line 5" };
+                    const { Filesystem } = Capacitor.Plugins; // Ab Directory aur Encoding yahan se nahi lenge
+                    const dummyData = { student: "Ali", sabaq: "Para 1" };
                     const fileName = `dummy_backup_${Date.now()}.json`;
                     
                     statusEl.textContent = 'Permission granted. Writing file...';
@@ -67,8 +65,9 @@
                     await Filesystem.writeFile({
                         path: fileName,
                         data: JSON.stringify(dummyData, null, 2),
-                        directory: Directory.Downloads,
-                        encoding: Encoding.UTF8,
+                        // THE FIX IS HERE: Use raw strings instead of enums
+                        directory: "DOWNLOADS", 
+                        encoding: "UTF-8",
                         recursive: true
                     });
 
@@ -105,25 +104,24 @@
                 statusEl.textContent = 'Share image button clicked...';
 
                 try {
-                    const { Filesystem, Directory, Share } = Capacitor.Plugins;
-                    // Create a dummy image using base64
+                    const { Filesystem, Share } = Capacitor.Plugins;
                     const dummyBase64Image = 'iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg==';
                     const fileName = 'dummy_image.png';
 
                     statusEl.textContent = 'Writing temporary image file...';
                     
-                    // Directory.Data is the correct, writable location for temporary files
                     const result = await Filesystem.writeFile({
                         path: fileName,
                         data: dummyBase64Image,
-                        directory: Directory.Data, // THE FIX IS HERE: Was Directory.Cache
+                        // THE FIX IS HERE: Use raw strings instead of enums
+                        directory: "DATA", 
                     });
 
                     statusEl.textContent = 'File written. Opening share dialog...';
 
                     await Share.share({
                         title: 'Dummy Image',
-                        url: result.uri, // The path to the saved file
+                        url: result.uri,
                         dialogTitle: 'Share this image',
                     });
                     statusEl.textContent = 'Share dialog for image opened successfully!';
